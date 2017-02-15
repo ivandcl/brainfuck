@@ -1,0 +1,149 @@
+<html>
+	<head>
+	 <meta charset="UTF-8">
+	<title>Brainfuck</title></head>
+	<script src="jquery-3.1.1.min.js"></script>
+	<body>
+	<textarea id="code" style="width:100%">
+	++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
+	</textarea>
+	<div>
+	<button id="btRun">RUN</button>
+	</div>
+	<div id="out"></div>
+	<div id="tries"></div>
+	<script>
+	$(function(){
+		var target=[];
+		
+		
+		function error(candidate, target){
+			var e = 0;			
+			for(var i=0;i<target.length;i++){
+				if(candidate.length<=i){
+					e+=255;
+				}else{
+					e=Math.abs(candidate[i]-target[i]);
+				}
+			}
+			return e;			
+		}
+		
+		var LIMIT = 10000;
+		
+		function brainfuck(program){
+			var memory = [];
+			var output = [];
+			var input = [2,3];
+			for(var i=0;i<10000;i++){memory[i]=0;}
+			
+			var pointer = 0;
+			for(var i=0,l=0;i<program.length;i++,l++){
+				if(l>LIMIT) break;
+				var operator = program[i];
+				if(operator=='>'){
+					pointer++;
+				}else if(operator=='<'){
+					pointer--;
+				}else if(operator=='+'){
+					memory[pointer]++;
+				}else if(operator=='-'){
+					memory[pointer]--;
+				}else if(operator=='.'){
+					output.push(memory[pointer]);
+				}else if(operator==','){
+					if(input.length>0){
+						memory[pointer]= input.pop();//prompt("Input");
+					}
+				}else if(operator=='['){
+					if(memory[pointer]==0){
+						i=program.indexOf("]",i);
+					}
+				}else if(operator==']'){
+					if(memory[pointer]!=0){
+						var stepback = -1;
+						while(stepback==-1){
+							l++;
+							if(l>LIMIT) break;
+							i--;
+							stepback=program.indexOf("[",i);
+						}
+					}
+				}
+			}
+			return output;
+		}
+				
+		function getRandomInt(max) {
+			return Math.floor(Math.random() * max);
+		}
+
+		function randCode(lines){
+			var program="";
+			var adn = ['<','>','+','-','.',',','[',']',' '];
+			for(var i=0;i<lines;i++){
+				program+=adn[getRandomInt(adn.length)];
+			}
+			return program;
+		}	
+		
+		var LINES = 1;
+		
+		var cycles = [];
+		for(var i=0;i<LINES;i++){
+			cycles.push(0);
+		}
+		
+		var cycle = 0;
+		
+		function fordwareCode(lines){
+			var program=",>,[";
+			var adn = ['<','>','+','-','.',',','[',']',' '];
+			//var adn = ['+','.'];
+			for(var i=0,j=0;i<lines;i++){
+				var c = cycles[i];				
+				program+=adn[c];
+			}
+			cycle++;
+			cycles[0]++;
+			for(var i=1;i<LINES;i++){
+				if(cycles[i-1]==adn.length){
+					cycles[i-1]=0;
+					cycles[i]++;					
+				}
+			}
+			if(cycles[LINES-1]==adn.length){
+				cycle=0;
+				LINES++;
+				for(var i=0;i<LINES;i++){
+					cycles[i]=0;
+				}
+			}			
+			return program+"]>.";
+		}		
+		
+		function evolution(){
+			//var program = randCode(10);
+			var program = fordwareCode(LINES);
+			var candidate = brainfuck(program);
+			var err = error(candidate, target);
+			if(err==0){
+				$('#tries').html("<div>"+program+" => "+candidate.join("-")+" ERROR "+err+"</div>");
+			}else{
+				$('#tries').html("<div>"+program+" => "+candidate.join("-")+" ERROR "+err+"</div>");
+				setTimeout(evolution,0);
+			}			
+		}
+		target=[5];
+		setTimeout(evolution,0);
+		$("#btRun").click(function(){
+			target = brainfuck($("#code").val());		
+			//for(var i=0;i<output.length;i++){output[i]=String.fromCharCode(output[i]);}
+			$('#out').html(target.join("-"));
+			setTimeout(evolution,5000);
+		});
+		
+	});
+	</script>
+	</body>
+</html>
