@@ -4,18 +4,18 @@
 	<title>Brainfuck</title></head>
 	<script src="jquery-3.1.1.min.js"></script>
 	<body>
-	<textarea id="code" style="width:100%">
-	++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
+	<textarea id="in" style="width:100%"></textarea>
+	<textarea id="code" style="width:100%">++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.
 	</textarea>
+	<textarea id="out" style="width:100%"></textarea>
+	<textarea id="memory" style="width:100%"></textarea>
 	<div>
 	<button id="btRun">RUN</button>
 	</div>
-	<div id="out"></div>
 	<div id="tries"></div>
 	<script>
 	$(function(){
 		var target=[];
-		
 		
 		function error(candidate, target){
 			var e = 0;			
@@ -31,16 +31,16 @@
 		
 		var LIMIT = 10000;
 		
-		function brainfuck(program){
+		function brainfuck(program,input){
 			var memory = [];
 			var output = [];
-			var input = [2,3];
-			for(var i=0;i<10000;i++){memory[i]=0;}
+			var callStak = [];
+			for(var i=0;i<10;i++){memory[i]=0;}
 			
 			var pointer = 0;
-			for(var i=0,l=0;i<program.length;i++,l++){
-				if(l>LIMIT) break;
-				var operator = program[i];
+			for(var i=0,l=0;i<program.length;i++,l++){								
+				if(l>LIMIT) break;				
+				var operator = program[i];				
 				if(operator=='>'){
 					pointer++;
 				}else if(operator=='<'){
@@ -53,24 +53,24 @@
 					output.push(memory[pointer]);
 				}else if(operator==','){
 					if(input.length>0){
-						memory[pointer]= input.pop();//prompt("Input");
+						memory[pointer]= input.shift();//prompt("Input");
 					}
 				}else if(operator=='['){
-					if(memory[pointer]==0){
+					callStak.push(i);
+					if(memory[pointer]==0){						
 						i=program.indexOf("]",i);
 					}
+					//console.log("PUSH",callStak,memory);
 				}else if(operator==']'){
+					var iStack= callStak.pop();
 					if(memory[pointer]!=0){
-						var stepback = -1;
-						while(stepback==-1){
-							l++;
-							if(l>LIMIT) break;
-							i--;
-							stepback=program.indexOf("[",i);
-						}
+						i = iStack-1;						
 					}
-				}
+					//console.log("POP",callStak,memory);
+				}				
 			}
+			it =  l;
+			$("#memory").val(memory.join("-"));
 			return output;
 		}
 				
@@ -122,6 +122,7 @@
 			return program+"]>.";
 		}		
 		
+		target=[5];
 		function evolution(){
 			//var program = randCode(10);
 			var program = fordwareCode(LINES);
@@ -134,16 +135,23 @@
 				setTimeout(evolution,0);
 			}			
 		}
-		target=[5];
-		setTimeout(evolution,0);
+				
 		$("#btRun").click(function(){
-			target = brainfuck($("#code").val());		
-			//for(var i=0;i<output.length;i++){output[i]=String.fromCharCode(output[i]);}
-			$('#out').html(target.join("-"));
-			setTimeout(evolution,5000);
+			var start = (new Date()).getTime();
+			var input = $("#in").val().split("-");
+			target = brainfuck($("#code").val(),input);
+			var stop = (new Date()).getTime()-start;			
+			var output = [];
+			for(var i=0;i<target.length;i++){output[i]=String.fromCharCode(target[i]);}
+			$('#out').html(target.join("-")+" ("+output.join("")+") time: "+stop+" iteraciones "+it);			
 		});
 		
 	});
 	</script>
+	<div>Pow <input value="++[>++[>++[>++<-]<-]<-].>.>.>."></div>
+	<div>Sum <input id="sum" value=",>,[<+>-]<."><a href="#" onclick="$('#code').val($('#sum').val()); return false;">Test</a></div>	
+	<div>Rest <input id="rest" value=",>,[<->-]<."><a href="#" onclick="$('#code').val($('#rest').val()); return false;">Test</a></div>
+	<div>Mul ,>,<[>[->+>+<<]>>[-<<+>>]<<<-]>>. <input id="mul" value=",>>,[>+>+<<-]<<[>>>[<<+>+>-]<[>+>+<<-]<<-]>."><a href="#" onclick="$('#code').val($('#mul').val()); return false;">Test</a></div>
+	
 	</body>
 </html>
